@@ -7,15 +7,14 @@ https://stock.finance.sina.com.cn/hkstock/quotes/00700.html
 """
 
 import pandas as pd
-from py_mini_racer import MiniRacer
 import requests
 
 from akshare.stock.cons import (
-    hk_js_decode,
     hk_sina_stock_hist_url,
     hk_sina_stock_hist_hfq_url,
     hk_sina_stock_hist_qfq_url,
 )
+from akshare.utils.sina_klc_decoder import decode_sina_klc_payload
 from akshare.utils.tqdm import get_tqdm
 
 
@@ -118,11 +117,9 @@ def stock_hk_daily(symbol: str = "00981", adjust: str = "") -> pd.DataFrame:
     :rtype: pandas.DataFrame
     """
     r = requests.get(hk_sina_stock_hist_url.format(symbol))
-    js_code = MiniRacer()
-    js_code.eval(hk_js_decode)
-    dict_list = js_code.call(
-        "d", r.text.split("=")[1].split(";")[0].replace('"', "")
-    )  # 执行js解密代码
+    dict_list = decode_sina_klc_payload(
+        r.text.split("=")[1].split(";")[0].replace('"', "")
+    )
     data_df = pd.DataFrame(dict_list)
     data_df.index = pd.to_datetime(data_df["date"]).dt.date
     del data_df["date"]
